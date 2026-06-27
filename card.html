@@ -2,15 +2,16 @@
 <html lang="zh">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>给zita宝宝的专属惊喜</title>
     <style>
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #030712; cursor: pointer; }
         canvas { position: absolute; width: 100%; height: 100%; }
-        .music-tip { position: absolute; top: 20px; right: 20px; color: rgba(189, 224, 254, 0.7); font-size: 13px; font-family: "Microsoft YaHei", sans-serif; z-index: 30; pointer-events: none; transition: opacity 0.8s; background: rgba(255,255,255,0.05); padding: 6px 12px; border-radius: 20px; border: 1px solid rgba(189, 224, 254, 0.2); }
+        .music-tip { position: absolute; top: 15px; left: 50%; transform: translateX(-50%); color: rgba(189, 224, 254, 0.7); font-size: 11px; font-family: "Microsoft YaHei", sans-serif; z-index: 30; pointer-events: none; transition: opacity 0.8s; background: rgba(255,255,255,0.05); padding: 4px 10px; border-radius: 20px; border: 1px solid rgba(189, 224, 254, 0.2); white-space: nowrap; }
     </style>
 </head>
 <body>
-    <div class="music-tip" id="musicTip">🎵 点击屏幕 开启浪漫《特别的人》并引爆爱心</div>
+    <div class="music-tip" id="musicTip">🎵 触摸屏幕 开启浪漫《特别的人》并引爆爱心</div>
     <canvas id="heartCanvas"></canvas>
 
     <audio id="bgMusic" loop preload="auto">
@@ -26,11 +27,7 @@
         const tips = ["好好爱自己 ❤️", "好好吃饭 🍚", "保持好心情 ☀️", "身体健康 🍎", "顺顺利利 🍀", "别熬夜 🌙", "天凉了多穿衣服 🧥", "我喜欢你"];
         const colors = ["#ffafcc", "#bde0fe", "#a2d2ff", "#ffc6ff", "#e8f5e9", "#fff9c4"];
         
-        const stickers = [];
-        let currentStep = 0;
-        let heartFormed = false;
-        let lastGenTime = 0;
-        const genInterval = 40; 
+        const stickers = []; let currentStep = 0; let heartFormed = false; let lastGenTime = 0; const genInterval = 40; 
 
         function getHeartPoints() {
             const points = [];
@@ -38,107 +35,71 @@
                 const t = (i / 40) * Math.PI * 2;
                 const xVal = 16 * Math.pow(Math.sin(t), 3);
                 const yVal = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
-                const scaleX = width > 600 ? 24 : 12; 
-                const scaleY = width > 600 ? 18 : 9;
-                const sx = width / 2 + xVal * scaleX - 90;
-                const sy = height / 2 + yVal * scaleY - 40;
+                // 🌟 手机端精密适配：在窄屏手机上，将卡片爱心等比压缩到 6.5 到 8.5 之间，完美聚拢于中心 🌟
+                const scaleX = width < 600 ? 6.5 : 24; 
+                const scaleY = width < 600 ? 8.5 : 18;
+                // 手机上的卡片自身尺寸从 180 调整为 110，文字完美包容
+                const offsetW = width < 600 ? 55 : 90;
+                const offsetH = width < 600 ? 25 : 40;
+                
+                const sx = width / 2 + xVal * scaleX - offsetW;
+                const sy = height / 2 + yVal * scaleY - offsetH;
                 points.push({ x: sx, y: sy, idx: i });
             }
             return points;
         }
 
-        const heartPoints = getHeartPoints();
+        let heartPoints = getHeartPoints();
 
-        document.addEventListener('click', () => {
-            const music = document.getElementById('bgMusic');
-            const tip = document.getElementById('musicTip');
-            if (music.paused) {
-                music.play().then(() => {
-                    tip.style.opacity = '1';
-                    tip.innerHTML = "🎵 正在播放《特别的人》";
-                    setTimeout(() => { tip.style.opacity = '0'; }, 2000);
-                });
-            } else {
-                music.pause();
-                tip.style.opacity = '1';
-                tip.innerHTML = "⏸ 音乐已暂停（点击屏幕继续）";
-            }
-        });
-
-        document.addEventListener('touchstart', () => {
-            const music = document.getElementById('bgMusic');
-            const tip = document.getElementById('musicTip');
-            if (music.paused) {
-                music.play().then(() => {
-                    tip.style.opacity = '1';
-                    tip.innerHTML = "🎵 正在播放《特别的人》";
-                    setTimeout(() => { tip.style.opacity = '0'; }, 2000);
-                });
-            }
-        });
+        function toggleAudio() {
+            const music = document.getElementById('bgMusic'); const tip = document.getElementById('musicTip');
+            if (music.paused) { music.play().then(() => { tip.style.opacity = '1'; tip.innerHTML = "🎵 正在播放《特别的人》"; setTimeout(() => { tip.style.opacity = '0'; }, 2000); }); } 
+            else { music.pause(); tip.style.opacity = '1'; tip.innerHTML = "⏸ 音乐已暂停"; }
+        }
+        document.addEventListener('click', toggleAudio); document.addEventListener('touchstart', toggleAudio, { passive: false });
 
         function createSticker(pt) {
             const text = pt.idx === 20 ? "我喜欢你 ❤️" : tips[Math.floor(Math.random() * tips.length)];
             const bg = colors[Math.floor(Math.random() * colors.length)];
-            
-            // 🌟 终极修正：将极限飞行速度锁死在 0.25 到 0.5 之间，带来极致轻柔的云海漂移质感 🌟
-            let vx = (Math.random() - 0.5) * 0.5;
-            let vy = (Math.random() - 0.5) * 0.5;
-            if (Math.abs(vx) < 0.2) vx = vx > 0 ? 0.35 : -0.35;
-            if (Math.abs(vy) < 0.2) vy = vy > 0 ? 0.35 : -0.35;
-
+            let vx = (Math.random() - 0.5) * 0.5; let vy = (Math.random() - 0.5) * 0.5;
+            if (Math.abs(vx) < 0.2) vx = vx > 0 ? 0.35 : -0.35; if (Math.abs(vy) < 0.2) vy = vy > 0 ? 0.35 : -0.35;
             stickers.push({ x: pt.x, y: pt.y, vx: vx, vy: vy, text: text, bg: bg });
         }
 
         function drawCard(s) {
-            ctx.save();
-            ctx.fillStyle = s.bg;
-            ctx.shadowColor = "rgba(0,0,0,0.08)";
-            ctx.shadowBlur = 4;
-            ctx.fillRect(s.x, s.y, 180, 80);
+            ctx.save(); ctx.fillStyle = s.bg; ctx.shadowColor = "rgba(0,0,0,0.08)"; ctx.shadowBlur = 4;
+            // 手机卡片物理尺寸精细化为 110x50 宽和高，视觉极为匀称不遮挡
+            const cardW = width < 600 ? 110 : 180;
+            const cardH = width < 600 ? 50 : 80;
+            ctx.fillRect(s.x, s.y, cardW, cardH);
             
-            ctx.shadowBlur = 0;
-            ctx.fillStyle = "#1e293b";
-            ctx.font = "bold 14px Microsoft YaHei, sans-serif";
-            ctx.textAlign = "center";
-            ctx.textBaseline = "middle";
-            ctx.fillText(s.text, s.x + 90, s.y + 40);
-            ctx.restore();
+            ctx.shadowBlur = 0; ctx.fillStyle = "#1e293b";
+            const fSize = width < 600 ? "bold 10px" : "bold 14px";
+            ctx.font = `${fSize} Microsoft YaHei, sans-serif`;
+            ctx.textAlign = "center"; ctx.textBaseline = "middle";
+            ctx.fillText(s.text, s.x + cardW/2, s.y + cardH/2); ctx.restore();
         }
 
         function mainLoop() {
-            ctx.clearRect(0, 0, width, height);
-            const now = Date.now();
+            ctx.clearRect(0, 0, width, height); const now = Date.now();
+            const cardW = width < 600 ? 110 : 180; const cardH = width < 600 ? 50 : 80;
 
-            if (currentStep < heartPoints.length) {
-                if (now - lastGenTime >= genInterval) {
-                    createSticker(heartPoints[currentStep]);
-                    currentStep++;
-                    lastGenTime = now;
-                }
-            } else if (!heartFormed) {
-                setTimeout(() => { heartFormed = true; }, 1500);
-            }
+            if (currentStep < heartPoints.length) { if (now - lastGenTime >= genInterval) { createSticker(heartPoints[currentStep]); currentStep++; lastGenTime = now; } } 
+            else if (!heartFormed) { setTimeout(() => { heartFormed = true; }, 1500); }
 
             for (let i = 0; i < stickers.length; i++) {
                 const s = stickers[i];
                 if (heartFormed) {
-                    s.x += s.vx;
-                    s.y += s.vy;
-                    if (s.x <= 0 || s.x >= width - 180) s.vx = -s.vx;
-                    if (s.y <= 0 || s.y >= height - 80) s.vy = -s.vy;
+                    s.x += s.vx; s.y += s.vy;
+                    if (s.x <= 0 || s.x >= width - cardW) s.vx = -s.vx;
+                    if (s.y <= 0 || s.y >= height - cardH) s.vy = -s.vy;
                 }
                 drawCard(s);
             }
-
             requestAnimationFrame(mainLoop);
         }
 
-        window.addEventListener('resize', () => {
-            width = canvas.width = window.innerWidth;
-            height = canvas.height = window.innerHeight;
-        });
-
+        window.addEventListener('resize', () => { width = canvas.width = window.innerWidth; height = canvas.height = window.innerHeight; heartPoints = getHeartPoints(); });
         mainLoop();
     </script>
 </body>
