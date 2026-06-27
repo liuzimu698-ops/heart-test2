@@ -1,1 +1,142 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <title>给zita宝宝的专属惊喜</title>
+    <style>
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #030712; cursor: pointer; }
+        canvas { position: absolute; width: 100%; height: 100%; }
+        .music-tip { position: absolute; top: 20px; right: 20px; color: rgba(189, 224, 254, 0.7); font-size: 13px; font-family: "Microsoft YaHei", sans-serif; z-index: 30; pointer-events: none; transition: opacity 0.8s; background: rgba(255,255,255,0.05); padding: 6px 12px; border-radius: 20px; border: 1px solid rgba(189, 224, 254, 0.2); }
+    </style>
+</head>
+<body>
+    <div class="music-tip" id="musicTip">🎵 点击屏幕 开启浪漫《特别的人》并引爆爱心</div>
+    <canvas id="heartCanvas"></canvas>
+
+    <!-- 高速免拦截大厂原声背景音乐直链 -->
+    <audio id="bgMusic" loop preload="auto">
+        <source src="https://likepoems.com" type="audio/mpeg">
+    </audio>
+
+    <script>
+        const canvas = document.getElementById('heartCanvas');
+        const ctx = canvas.getContext('2d');
+        let width = canvas.width = window.innerWidth;
+        let height = canvas.height = window.innerHeight;
+
+        const tips = ["好好爱自己 ❤️", "好好吃饭 🍚", "保持好心情 ☀️", "身体健康 🍎", "顺顺利利 🍀", "别熬夜 🌙", "天凉了多穿衣服 🧥", "我喜欢你"];
+        const colors = ["#ffafcc", "#bde0fe", "#a2d2ff", "#ffc6ff", "#e8f5e9", "#fff9c4"];
+        
+        const stickers = [];
+        let currentStep = 0;
+        let heartFormed = false;
+        let lastGenTime = 0;
+        const genInterval = 40; // 40毫秒快节奏生成
+
+        // 几何算法：计算 40 个爱心轨迹点
+        function getHeartPoints() {
+            const points = [];
+            for (let i = 0; i < 40; i++) {
+                const t = (i / 40) * Math.PI * 2;
+                const xVal = 16 * Math.pow(Math.sin(t), 3);
+                const yVal = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
+                // 智能适配：大屏幕和手机屏幕自动缩放心形比例，防止超出屏幕
+                const scaleX = width > 600 ? 28 : 12; 
+                const scaleY = width > 600 ? 20 : 9;
+                const sx = width / 2 + xVal * scaleX - 90;
+                const sy = height / 2 + yVal * scaleY - 40;
+                points.push({ x: sx, y: sy, idx: i });
+            }
+            return points;
+        }
+
+        const heartPoints = getHeartPoints();
+
+        // 点击屏幕控制音乐播放与暂停
+        document.addEventListener('click', () => {
+            const music = document.getElementById('bgMusic');
+            const tip = document.getElementById('musicTip');
+            if (music.paused) {
+                music.play().then(() => {
+                    tip.style.opacity = '1';
+                    tip.innerHTML = "🎵 正在播放《特别的人》";
+                    setTimeout(() => { tip.style.opacity = '0'; }, 2000);
+                });
+            } else {
+                music.pause();
+                tip.style.opacity = '1';
+                tip.innerHTML = "⏸ 音乐已暂停（点击屏幕继续）";
+            }
+        });
+
+        function createSticker(pt) {
+            // 在中间那张最显眼的卡片上，必定写着表白文字
+            const text = pt.idx === 20 ? "我喜欢你 ❤️" : tips[Math.floor(Math.random() * tips.length)];
+            const bg = colors[Math.floor(Math.random() * colors.length)];
+            let vx = (Math.random() - 0.5) * 6;
+            let vy = (Math.random() - 0.5) * 6;
+            if (Math.abs(vx) < 1.5) vx = vx > 0 ? 3 : -3;
+            if (Math.abs(vy) < 1.5) vy = vy > 0 ? 3 : -3;
+
+            stickers.push({ x: pt.x, y: pt.y, vx: vx, vy: vy, text: text, bg: bg });
+        }
+
+        function drawCard(s) {
+            ctx.save();
+            ctx.fillStyle = s.bg;
+            ctx.shadowColor = "rgba(0,0,0,0.15)";
+            ctx.shadowBlur = 6;
+            // 绘制卡片矩形实体
+            ctx.fillRect(s.x, s.y, 180, 80);
+            
+            // 写入卡片内的文字
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = "#1e293b";
+            ctx.font = "bold 14px Microsoft YaHei, sans-serif";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText(s.text, s.x + 90, s.y + 40);
+            ctx.restore();
+        }
+
+        function mainLoop() {
+            ctx.clearRect(0, 0, width, height);
+            const now = Date.now();
+
+            // 1. 流水线长出便利贴
+            if (currentStep < heartPoints.length) {
+                if (now - lastGenTime >= genInterval) {
+                    createSticker(heartPoints[currentStep]);
+                    currentStep++;
+                    lastGenTime = now;
+                }
+            } else if (!heartFormed) {
+                // 爱心凝聚定格 1.5 秒后，瞬间引爆全屏飞舞
+                setTimeout(() => { heartFormed = true; }, 1500);
+            }
+
+            // 2. 满帧物理移动与边缘碰撞反弹
+            for (let i = 0; i < stickers.length; i++) {
+                const s = stickers[i];
+                if (heartFormed) {
+                    s.x += s.vx;
+                    s.y += s.vy;
+                    if (s.x <= 0 || s.x >= width - 180) s.vx = -s.vx;
+                    if (s.y <= 0 || s.y >= height - 80) s.vy = -s.vy;
+                }
+                drawCard(s);
+            }
+
+            requestAnimationFrame(mainLoop);
+        }
+
+        window.addEventListener('resize', () => {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        });
+
+        mainLoop();
+    </script>
+</body>
+</html>
 
