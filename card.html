@@ -81,11 +81,11 @@
             const text = pt.idx === 20 ? "我喜欢你 ❤️" : tips[Math.floor(Math.random() * tips.length)];
             const bg = colors[Math.floor(Math.random() * colors.length)];
             
-            // 🌟 速度极度调慢，散开时极为优雅 🌟
-            let vx = (Math.random() - 0.5) * 1.6;
-            let vy = (Math.random() - 0.5) * 1.6;
-            if (Math.abs(vx) < 0.6) vx = vx > 0 ? 0.9 : -0.9;
-            if (Math.abs(vy) < 0.6) vy = vy > 0 ? 0.9 : -0.9;
+            // 🌟 终极修正：将极限飞行速度锁死在 0.25 到 0.5 之间，带来极致轻柔的云海漂移质感 🌟
+            let vx = (Math.random() - 0.5) * 0.5;
+            let vy = (Math.random() - 0.5) * 0.5;
+            if (Math.abs(vx) < 0.2) vx = vx > 0 ? 0.35 : -0.35;
+            if (Math.abs(vy) < 0.2) vy = vy > 0 ? 0.35 : -0.35;
 
             stickers.push({ x: pt.x, y: pt.y, vx: vx, vy: vy, text: text, bg: bg });
         }
@@ -93,8 +93,8 @@
         function drawCard(s) {
             ctx.save();
             ctx.fillStyle = s.bg;
-            ctx.shadowColor = "rgba(0,0,0,0.1)";
-            ctx.shadowBlur = 5;
+            ctx.shadowColor = "rgba(0,0,0,0.08)";
+            ctx.shadowBlur = 4;
             ctx.fillRect(s.x, s.y, 180, 80);
             
             ctx.shadowBlur = 0;
