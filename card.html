@@ -13,7 +13,6 @@
     <div class="music-tip" id="musicTip">🎵 点击屏幕 开启浪漫《特别的人》并引爆爱心</div>
     <canvas id="heartCanvas"></canvas>
 
-    <!-- 高速免拦截大厂原声背景音乐直链 -->
     <audio id="bgMusic" loop preload="auto">
         <source src="https://likepoems.com" type="audio/mpeg">
     </audio>
@@ -31,18 +30,16 @@
         let currentStep = 0;
         let heartFormed = false;
         let lastGenTime = 0;
-        const genInterval = 40; // 40毫秒快节奏生成
+        const genInterval = 40; 
 
-        // 几何算法：计算 40 个爱心轨迹点
         function getHeartPoints() {
             const points = [];
             for (let i = 0; i < 40; i++) {
                 const t = (i / 40) * Math.PI * 2;
                 const xVal = 16 * Math.pow(Math.sin(t), 3);
                 const yVal = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
-                // 智能适配：大屏幕和手机屏幕自动缩放心形比例，防止超出屏幕
-                const scaleX = width > 600 ? 28 : 12; 
-                const scaleY = width > 600 ? 20 : 9;
+                const scaleX = width > 600 ? 24 : 12; 
+                const scaleY = width > 600 ? 18 : 9;
                 const sx = width / 2 + xVal * scaleX - 90;
                 const sy = height / 2 + yVal * scaleY - 40;
                 points.push({ x: sx, y: sy, idx: i });
@@ -52,7 +49,6 @@
 
         const heartPoints = getHeartPoints();
 
-        // 点击屏幕控制音乐播放与暂停
         document.addEventListener('click', () => {
             const music = document.getElementById('bgMusic');
             const tip = document.getElementById('musicTip');
@@ -69,14 +65,27 @@
             }
         });
 
+        document.addEventListener('touchstart', () => {
+            const music = document.getElementById('bgMusic');
+            const tip = document.getElementById('musicTip');
+            if (music.paused) {
+                music.play().then(() => {
+                    tip.style.opacity = '1';
+                    tip.innerHTML = "🎵 正在播放《特别的人》";
+                    setTimeout(() => { tip.style.opacity = '0'; }, 2000);
+                });
+            }
+        });
+
         function createSticker(pt) {
-            // 在中间那张最显眼的卡片上，必定写着表白文字
             const text = pt.idx === 20 ? "我喜欢你 ❤️" : tips[Math.floor(Math.random() * tips.length)];
             const bg = colors[Math.floor(Math.random() * colors.length)];
-            let vx = (Math.random() - 0.5) * 6;
-            let vy = (Math.random() - 0.5) * 6;
-            if (Math.abs(vx) < 1.5) vx = vx > 0 ? 3 : -3;
-            if (Math.abs(vy) < 1.5) vy = vy > 0 ? 3 : -3;
+            
+            // 🌟 速度极度调慢，散开时极为优雅 🌟
+            let vx = (Math.random() - 0.5) * 1.6;
+            let vy = (Math.random() - 0.5) * 1.6;
+            if (Math.abs(vx) < 0.6) vx = vx > 0 ? 0.9 : -0.9;
+            if (Math.abs(vy) < 0.6) vy = vy > 0 ? 0.9 : -0.9;
 
             stickers.push({ x: pt.x, y: pt.y, vx: vx, vy: vy, text: text, bg: bg });
         }
@@ -84,12 +93,10 @@
         function drawCard(s) {
             ctx.save();
             ctx.fillStyle = s.bg;
-            ctx.shadowColor = "rgba(0,0,0,0.15)";
-            ctx.shadowBlur = 6;
-            // 绘制卡片矩形实体
+            ctx.shadowColor = "rgba(0,0,0,0.1)";
+            ctx.shadowBlur = 5;
             ctx.fillRect(s.x, s.y, 180, 80);
             
-            // 写入卡片内的文字
             ctx.shadowBlur = 0;
             ctx.fillStyle = "#1e293b";
             ctx.font = "bold 14px Microsoft YaHei, sans-serif";
@@ -103,7 +110,6 @@
             ctx.clearRect(0, 0, width, height);
             const now = Date.now();
 
-            // 1. 流水线长出便利贴
             if (currentStep < heartPoints.length) {
                 if (now - lastGenTime >= genInterval) {
                     createSticker(heartPoints[currentStep]);
@@ -111,11 +117,9 @@
                     lastGenTime = now;
                 }
             } else if (!heartFormed) {
-                // 爱心凝聚定格 1.5 秒后，瞬间引爆全屏飞舞
                 setTimeout(() => { heartFormed = true; }, 1500);
             }
 
-            // 2. 满帧物理移动与边缘碰撞反弹
             for (let i = 0; i < stickers.length; i++) {
                 const s = stickers[i];
                 if (heartFormed) {
@@ -139,4 +143,3 @@
     </script>
 </body>
 </html>
-
