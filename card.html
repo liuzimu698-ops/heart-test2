@@ -35,15 +35,17 @@
                 const t = (i / 40) * Math.PI * 2;
                 const xVal = 16 * Math.pow(Math.sin(t), 3);
                 const yVal = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
-                // 🌟 手机端精密适配：在窄屏手机上，将卡片爱心等比压缩到 6.5 到 8.5 之间，完美聚拢于中心 🌟
+                
                 const scaleX = width < 600 ? 6.5 : 24; 
                 const scaleY = width < 600 ? 8.5 : 18;
-                // 手机上的卡片自身尺寸从 180 调整为 110，文字完美包容
                 const offsetW = width < 600 ? 55 : 90;
                 const offsetH = width < 600 ? 25 : 40;
                 
+                // 🌟 核心美化 1：将手机端初始爱心的重心 Y 轴向上提起 30 个像素，防止整体偏下
+                const centerY = width < 600 ? (height / 2 - 30) : (height / 2);
+                
                 const sx = width / 2 + xVal * scaleX - offsetW;
-                const sy = height / 2 + yVal * scaleY - offsetH;
+                const sy = centerY + yVal * scaleY - offsetH;
                 points.push({ x: sx, y: sy, idx: i });
             }
             return points;
@@ -68,7 +70,6 @@
 
         function drawCard(s) {
             ctx.save(); ctx.fillStyle = s.bg; ctx.shadowColor = "rgba(0,0,0,0.08)"; ctx.shadowBlur = 4;
-            // 手机卡片物理尺寸精细化为 110x50 宽和高，视觉极为匀称不遮挡
             const cardW = width < 600 ? 110 : 180;
             const cardH = width < 600 ? 50 : 80;
             ctx.fillRect(s.x, s.y, cardW, cardH);
@@ -91,8 +92,13 @@
                 const s = stickers[i];
                 if (heartFormed) {
                     s.x += s.vx; s.y += s.vy;
+                    
+                    // 🌟 核心美化 2：加装手机端安全防沉底反弹边界！
+                    // 手机端底部安全线扣除 55 像素，给微信控制栏、手势返回栏留出绝对安全区，触墙直接提前强力反弹！
+                    const maxBottom = width < 600 ? (height - cardH - 55) : (height - cardH);
+                    
                     if (s.x <= 0 || s.x >= width - cardW) s.vx = -s.vx;
-                    if (s.y <= 0 || s.y >= height - cardH) s.vy = -s.vy;
+                    if (s.y <= 0 || s.y >= maxBottom) s.vy = -s.vy;
                 }
                 drawCard(s);
             }
